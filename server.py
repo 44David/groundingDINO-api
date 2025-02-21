@@ -7,61 +7,60 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
-
 origins = [
     "http://localhost:3000",
 ]
 
 app.add_middleware(
 	CORSMiddleware,
-    allow_origins=origins,
+    allow_origins="*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-@app.get("/prediction/groundingdino")
+@app.post("/prediction/groundingdino")
 async def predict(req: Request):
     
-		req_json = await req.json()
-		req_url = req_json.s3Url
-    
-		model_id = "IDEA-Research/grounding-dino-base"
-		device = "cuda" if torch.cuda.is_available() else "cpu"
+	req_json = await req.json()
 
-		processor = AutoProcessor.from_pretrained(model_id)
-		model = AutoModelForZeroShotObjectDetection.from_pretrained(model_id).to(device)
+	req_url = req_json["s3Url"]
+	req_text = req_json["prompt"]
 
-		image = Image.open(requests.get(req_url, stream=True).raw)
-		# Check for cats and remote controls
-		# VERY important: text queries need to be lowercased + end with a dot
-		text = "a cat. a remote control."
+	model_id = "IDEA-Research/grounding-dino-base"
+	device = "cuda" if torch.cuda.is_available() else "cpu"
 
-		inputs = processor(images=image, text=text, return_tensors="pt").to(device)
-		with torch.no_grad():
-			outputs = model(**inputs)
+	processor = AutoProcessor.from_pretrained(model_id)
+	model = AutoModelForZeroShotObjectDetection.from_pretrained(model_id).to(device)
 
-		results = processor.post_process_grounded_object_detection(
-			outputs,
-			inputs.input_ids,
-			box_threshold=0.4,
-			text_threshold=0.3,
-			target_sizes=[image.size[::-1]]
-		)
-  
-		return {"output": results}
+	image = Image.open(requests.get(req_url, stream=True).raw)
+
+	inputs = processor(images=image, text=req_text, return_tensors="pt").to(device)
+	with torch.no_grad():
+		outputs = model(**inputs)
+
+	results = processor.post_process_grounded_object_detection(
+		outputs,
+		inputs.input_ids,
+		box_threshold=0.4,
+		text_threshold=0.3,
+		target_sizes=[image.size[::-1]]
+	)
+
+	return {"output": results}
 
 @app.post("/prediction/owl-vit")
 async def predict(req: Request):
 
 	req_json = await req.json()
-	req_url = req_json.s3Url
+	req_url = req_json["s3Url"]
+	req_text = req_json["prompt"]
 		
 	processor = OwlViTProcessor.from_pretrained("google/owlvit-base-patch32")
 	model = OwlViTForObjectDetection.from_pretrained("google/owlvit-base-patch32")
 
 	image = Image.open(requests.get(req_url, stream=True).raw)
-	text_labels = [["a photo of a cat", "a photo of a dog"]]
+	text_labels = [[ req_text ]]
 
 	inputs = processor(text=text_labels, images=image, return_tensors="pt")
 	outputs = model(**inputs)
