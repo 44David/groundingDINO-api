@@ -1,6 +1,6 @@
 import requests
 import torch
-from PIL import Image
+from PIL import Image, ImageDraw
 from transformers import OwlViTProcessor, OwlViTForObjectDetection
 
 def owl_vit_predict(req_url, req_text):
@@ -26,7 +26,22 @@ def owl_vit_predict(req_url, req_text):
 
 	boxes, scores, text_labels = result["boxes"], result["scores"], result["text_labels"]
 
-    # TODO Change this so it returns the values
 	for box, score, text_label in zip(boxes, scores, text_labels):
+     
+		draw = ImageDraw.Draw(image)
+  
+		xmin = box[0] 
+		ymin = box[1]
+		xmax = box[2]
+		ymax = box[3]
+		
+		draw.rectangle((xmin, ymin, xmax, ymax), outline="red", width=1)
+		draw.text((xmin, ymin), f"{text_label}: {round(score.item(), 2)}", fill="white")
+  
+		image.save("owl-vit-result.jpg")
+		
 		box = [round(i, 2) for i in box.tolist()]
 		print(f"Detected {text_label} with confidence {round(score.item(), 3)} at location {box}")
+		
+		
+	

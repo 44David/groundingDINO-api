@@ -1,8 +1,9 @@
 import requests
 
 import torch
-from PIL import Image
+from PIL import Image, ImageDraw
 from transformers import AutoProcessor, AutoModelForZeroShotObjectDetection
+import time
 
 def grounding_dino_predict(req_url, req_text):
 
@@ -29,8 +30,19 @@ def grounding_dino_predict(req_url, req_text):
     # Retrieve the first image result
     result = results[0]
     for box, score, text_label in zip(result["boxes"], result["scores"], result["text_labels"]):
+        draw = ImageDraw.Draw(image)
+
+        xmin = box[0]
+        ymin = box[1]
+        xmax = box[2]
+        ymax = box[3]
+            
+        draw.rectangle((xmin, ymin, xmax, ymax), outline="red", width=1)
+        draw.text((xmin, ymin), f"{text_label}: {round(score.item(), 2)}", fill="white")
+
+        image.save("groundingdino-result.jpg")
+
         box = [round(x, 2) for x in box.tolist()]
         print(f"Detected {text_label} with confidence {round(score.item(), 3)} at location {box}")
-        
-    
-    
+
+
