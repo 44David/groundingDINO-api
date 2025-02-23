@@ -30,7 +30,9 @@ async def predict(req: Request):
 	req_url = req_json["s3Url"]
 	req_text = req_json["prompt"]
 	
-	grounding_dino_predict(req_url, req_text)
+	result_url = grounding_dino_predict(req_url, req_text)
+ 
+	return {"url": result_url}
 
 
 @app.post("/prediction/owl-vit")
@@ -40,4 +42,7 @@ async def predict(req: Request):
 	req_url = req_json["s3Url"]
 	req_text = req_json["prompt"]
 
-	owl_vit_predict(req_url, req_text)
+	result_url = owl_vit_predict(req_url, req_text)
+ 
+	return {"url": result_url}
+	

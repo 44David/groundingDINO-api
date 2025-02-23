@@ -1,4 +1,3 @@
-from dotenv import load_dotenv
 import os
 import boto3, botocore
 import io
@@ -28,6 +27,7 @@ class Upload():
         return response
      
     def s3_upload(self, buffer, img_name, img_type):
+        
         global bucket_name, access_key, access_secret, region
 
 

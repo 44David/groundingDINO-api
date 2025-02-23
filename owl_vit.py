@@ -1,6 +1,11 @@
 import requests
 import torch
+import io
 from PIL import Image, ImageDraw
+from s3 import Upload
+import mimetypes
+from urllib.parse import urlparse
+import os
 from transformers import OwlViTProcessor, OwlViTForObjectDetection
 
 def owl_vit_predict(req_url, req_text):
@@ -8,6 +13,7 @@ def owl_vit_predict(req_url, req_text):
 	model = OwlViTForObjectDetection.from_pretrained("google/owlvit-base-patch32")
 
 	image = Image.open(requests.get(req_url, stream=True).raw)
+
 	text_labels = [[ req_text ]]
 
 	inputs = processor(text=text_labels, images=image, return_tensors="pt")
@@ -37,11 +43,20 @@ def owl_vit_predict(req_url, req_text):
 		
 		draw.rectangle((xmin, ymin, xmax, ymax), outline="red", width=1)
 		draw.text((xmin, ymin), f"{text_label}: {round(score.item(), 2)}", fill="white")
+
+		in_mem_file = io.BytesIO()
+		image.save(in_mem_file, format=image.format)
+		in_mem_file.seek(0)		
+
+		upload = Upload()
+		parsed_url = urlparse(req_url)
+		filename = os.path.basename(parsed_url.path)
+		mime_type, _ = mimetypes.guess_type(filename)
   
-		image.save("owl-vit-result.jpg")
-		
-		box = [round(i, 2) for i in box.tolist()]
-		print(f"Detected {text_label} with confidence {round(score.item(), 3)} at location {box}")
-		
+		upload.s3_upload(in_mem_file, filename, mime_type)
+  
+		result_s3_url = upload.create_presigned_url(filename)
+
+		return result_s3_url		
 		
 	

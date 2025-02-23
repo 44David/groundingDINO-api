@@ -2,8 +2,11 @@ import requests
 
 import torch
 from PIL import Image, ImageDraw
+from s3 import Upload
+import mimetypes
+from urllib.parse import urlparse
+import os
 from transformers import AutoProcessor, AutoModelForZeroShotObjectDetection
-import time
 
 def grounding_dino_predict(req_url, req_text):
 
@@ -40,9 +43,19 @@ def grounding_dino_predict(req_url, req_text):
         draw.rectangle((xmin, ymin, xmax, ymax), outline="red", width=1)
         draw.text((xmin, ymin), f"{text_label}: {round(score.item(), 2)}", fill="white")
 
-        image.save("groundingdino-result.jpg")
+        in_mem_file = io.BytesIO()
+        image.save(in_mem_file, format=image.format)
+        in_mem_file.seek(0)		
 
-        box = [round(x, 2) for x in box.tolist()]
-        print(f"Detected {text_label} with confidence {round(score.item(), 3)} at location {box}")
+        upload = Upload()
+        parsed_url = urlparse(req_url)
+        filename = os.path.basename(parsed_url.path)
+        mime_type, _ = mimetypes.guess_type(filename)
 
+        upload.s3_upload(in_mem_file, filename, mime_type)
+
+        result_s3_url = upload.create_presigned_url(filename)
+
+        return result_s3_url		
+		
 
