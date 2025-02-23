@@ -11,7 +11,7 @@ from transformers import OwlViTProcessor, OwlViTForObjectDetection
 def owl_vit_predict(req_url, req_text):
 	processor = OwlViTProcessor.from_pretrained("google/owlvit-base-patch32")
 	model = OwlViTForObjectDetection.from_pretrained("google/owlvit-base-patch32")
-
+	
 	image = Image.open(requests.get(req_url, stream=True).raw)
 
 	text_labels = [[ req_text ]]
@@ -56,7 +56,5 @@ def owl_vit_predict(req_url, req_text):
 		upload.s3_upload(in_mem_file, filename, mime_type)
   
 		result_s3_url = upload.create_presigned_url(filename)
-
-		return result_s3_url		
 		
-	
+		return result_s3_url
