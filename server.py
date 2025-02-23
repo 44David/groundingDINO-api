@@ -1,18 +1,10 @@
 from fastapi import FastAPI, Request
-import requests
-import torch
-from PIL import Image
-from transformers import AutoProcessor, AutoModelForZeroShotObjectDetection, OwlViTProcessor, OwlViTForObjectDetection
 from fastapi.middleware.cors import CORSMiddleware
-
 from grounding_dino import grounding_dino_predict
 from owl_vit import owl_vit_predict
 
 app = FastAPI()
 
-origins = [
-    "http://localhost:3000",
-]
 
 app.add_middleware(
 	CORSMiddleware,
@@ -23,7 +15,7 @@ app.add_middleware(
 )
 
 @app.post("/prediction/groundingdino")
-async def predict(req: Request):
+async def predict_groundingdino(req: Request):
     
 	req_json = await req.json()
 
@@ -36,7 +28,7 @@ async def predict(req: Request):
 
 
 @app.post("/prediction/owl-vit")
-async def predict(req: Request):
+async def predict_owl_vit(req: Request):
 
 	req_json = await req.json()
 	req_url = req_json["s3Url"]

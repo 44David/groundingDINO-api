@@ -17,7 +17,7 @@ def grounding_dino_predict(req_url, req_text):
     model = AutoModelForZeroShotObjectDetection.from_pretrained(model_id).to(device)
 
     image = Image.open(requests.get(req_url, stream=True).raw)
-    text_labels = [[ req_text ]]
+    text_labels = req_text 
 
     inputs = processor(images=image, text=text_labels, return_tensors="pt").to(device)
     with torch.no_grad():
