@@ -17,7 +17,7 @@ def grounding_dino_predict(req_url, req_text):
     model = AutoModelForZeroShotObjectDetection.from_pretrained(model_id).to(device)
 
     image = Image.open(requests.get(req_url, stream=True).raw)
-    text_labels = req_text 
+    text_labels = [req_text] 
 
     inputs = processor(images=image, text=text_labels, return_tensors="pt").to(device)
     with torch.no_grad():
@@ -39,21 +39,22 @@ def grounding_dino_predict(req_url, req_text):
         xmax = box[2]
         ymax = box[3]
             
-        draw.rectangle((xmin, ymin, xmax, ymax), outline="red", width=1)
+        draw.rectangle((xmin, ymin, xmax, ymax), outline="red", width=5)
         draw.text((xmin, ymin), f"{text_label}: {round(score.item(), 2)}", fill="white")
-        
-        in_mem_file = io.BytesIO()
-        image.save(in_mem_file, format=image.format)
-        in_mem_file.seek(0)		
-        
-        upload = Upload()
-        parsed_url = urlparse(req_url)
-        filename = os.path.basename(parsed_url.path)
-        mime_type, _ = mimetypes.guess_type(filename)
-        
-        upload.s3_upload(in_mem_file, filename, mime_type)
+    
+    
+    in_mem_file = io.BytesIO()
+    image.save(in_mem_file, format=image.format)
+    in_mem_file.seek(0)		
+    
+    upload = Upload()
+    parsed_url = urlparse(req_url)
+    filename = os.path.basename(parsed_url.path)
+    mime_type, _ = mimetypes.guess_type(filename)
+    
+    upload.s3_upload(in_mem_file, filename, mime_type)
 
-        result_s3_url = upload.create_presigned_url(filename)
-        
-        return result_s3_url
+    result_s3_url = upload.create_presigned_url(filename)
+    
+    return result_s3_url
 
