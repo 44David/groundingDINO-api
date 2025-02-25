@@ -8,13 +8,11 @@ from urllib.parse import urlparse
 import os
 from transformers import OwlViTProcessor, OwlViTForObjectDetection
 
-def owl_vit_predict(req_url, req_text):
+def owl_vit_predict(req_url, req_text, req_box_width):
 	processor = OwlViTProcessor.from_pretrained("google/owlvit-base-patch32")
 	model = OwlViTForObjectDetection.from_pretrained("google/owlvit-base-patch32")
 	image = Image.open(requests.get(req_url, stream=True).raw)
-	print(req_text)
 	text_labels = [ req_text ]
-	print('text_labels', text_labels)
 	inputs = processor(text=text_labels, images=image, return_tensors="pt")
 	outputs = model(**inputs)
 
@@ -32,7 +30,6 @@ def owl_vit_predict(req_url, req_text):
 	boxes, scores, text_labels = result["boxes"], result["scores"], result["text_labels"]
 
 	for box, score, text_label in zip(boxes, scores, text_labels):
-     
 		draw = ImageDraw.Draw(image)
   
 		xmin = box[0] 
@@ -40,8 +37,8 @@ def owl_vit_predict(req_url, req_text):
 		xmax = box[2]
 		ymax = box[3]
 		
-		draw.rectangle((xmin, ymin, xmax, ymax), outline="red", width=5)
-		draw.text((xmin, ymin), f"{text_label}: {round(score.item(), 2)}", fill="white")
+		draw.rectangle((xmin, ymin, xmax, ymax), outline="red", width=int(req_box_width))
+		draw.text((xmin, ymin), f"{text_label}: {round(score.item(), 2)}", fill="blue")
 
 	in_mem_file = io.BytesIO()
 	image.save(in_mem_file, format=image.format)

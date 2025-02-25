@@ -8,7 +8,7 @@ import mimetypes
 from urllib.parse import urlparse
 import os
 import io
-def grounding_dino_predict(req_url, req_text):
+def grounding_dino_predict(req_url, req_text, req_box_width):
 
     model_id = "IDEA-Research/grounding-dino-tiny"
     device = "cuda"
@@ -31,6 +31,7 @@ def grounding_dino_predict(req_url, req_text):
     )
     
     result = results[0]
+    
     for box, score, text_label in zip(result["boxes"], result["scores"], result["text_labels"]):
         draw = ImageDraw.Draw(image)
 
@@ -39,8 +40,8 @@ def grounding_dino_predict(req_url, req_text):
         xmax = box[2]
         ymax = box[3]
             
-        draw.rectangle((xmin, ymin, xmax, ymax), outline="red", width=5)
-        draw.text((xmin, ymin), f"{text_label}: {round(score.item(), 2)}", fill="white")
+        draw.rectangle((xmin, ymin, xmax, ymax), outline="red", width=int(req_box_width))
+        draw.text((xmin, ymin), f"{text_label}: {round(score.item(), 2)}", fill="blue")
     
     
     in_mem_file = io.BytesIO()

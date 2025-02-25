@@ -21,8 +21,9 @@ async def predict_groundingdino(req: Request):
 
 	req_url = req_json["s3Url"]
 	req_text = req_json["prompt"]
+	req_width = req_json["boxWidth"]
 	
-	result_url = grounding_dino_predict(req_url, req_text)
+	result_url = grounding_dino_predict(req_url, req_text, req_width)
  
 	return {"url": result_url}
 
@@ -33,8 +34,9 @@ async def predict_owl_vit(req: Request):
 	req_json = await req.json()
 	req_url = req_json["s3Url"]
 	req_text = req_json["prompt"]
-
-	result_url = owl_vit_predict(req_url, req_text)
+	req_width = req_json["boxWidth"]
+	
+	result_url = owl_vit_predict(req_url, req_text, req_width)
  
 	return {"url": result_url}
 	
